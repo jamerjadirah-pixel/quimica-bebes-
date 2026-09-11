@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reino Místico: La Gran Aventura de las Ciencias</title>
+  <style>
+    :root {
+      --bg-dark: #020308;
+      --card-bg: rgba(10, 15, 30, 0.95);
+      --accent-purple: #b5179e;
+      --accent-cyan: #7209b7;
+      --neon-blue: #4cc9f0;
+      --neon-pink: #f72585;
+      --neon-gold: #ffb703;
+      --neon-green: #10b981;
+      --error: #ef4444;
+      --text: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      font-family: 'Fredoka', 'Segoe UI', sans-serif;
+      user-select: none;
+      cursor: crosshair;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ESCENOGRAFÍA Y PERSONAJES DE FONDO */
+    .spooky-world {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .entity {
+      position: absolute;
+      font-size: 4rem;
+      filter: drop-shadow(0 0 18px var(--accent-purple));
+      animation: floatEntity 5s infinite alternate ease-in-out;
+      opacity: 0.35;
+    }
+
+    .goblin   { top: 12%; left: 4%; font-size: 4.5rem; animation-delay: 0s; }
+    .skeleton { bottom: 8%; left: 6%; font-size: 5rem; animation-delay: 1.5s; filter: drop-shadow(0 0 15px red); }
+    .ghost    { top: 18%; right: 5%; font-size: 4.8rem; animation-delay: 3s; }
+    .cauldron { bottom: 10%; right: 7%; font-size: 5rem; filter: drop-shadow(0 0 20px var(--neon-green)); }
+    .eyes     { top: 50%; left: 2%; font-size: 2.5rem; animation: blinkEyes 4s infinite; }
+    .eyes2    { top: 60%; right: 3%; font-size: 2.2rem; animation: blinkEyes 6s infinite 2s; }
+
+    @keyframes floatEntity {
+      0% { transform: translateY(0px) rotate(-4deg); }
+      100% { transform: translateY(-30px) rotate(5deg); }
+    }
+
+    @keyframes blinkEyes {
+      0%, 90%, 100% { opacity: 0; }
+      92%, 98% { opacity: 0.8; }
+    }
+
+    #magicCanvas {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none; z-index: 2;
+    }
+
+    .game-window {
+      position: relative; z-index: 10;
+      background: var(--card-bg); backdrop-filter: blur(16px);
+      width: 100%; max-width: 900px; border-radius: 28px;
+      box-shadow: 0 0 60px rgba(181, 23, 158, 0.7), 0 0 30px rgba(76, 201, 240, 0.4);
+      border: 3px solid #4361ee;
+      animation: magicPulse 4s infinite alternate ease-in-out;
+      overflow: hidden; display: flex; flex-direction: column;
+    }
+
+    @keyframes magicPulse {
+      0% { border-color: #4361ee; box-shadow: 0 0 35px rgba(114, 9, 183, 0.6); }
+      50% { border-color: var(--neon-pink); box-shadow: 0 0 60px rgba(247, 37, 133, 0.8); }
+      100% { border-color: var(--neon-blue); box-shadow: 0 0 45px rgba(76, 201, 240, 0.7); }
+    }
+
+    .stats-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(5, 8, 20, 0.95); padding: 12px 20px;
+      border-bottom: 2px solid #3a0ca3; font-weight: bold; font-size: 0.95rem;
+    }
+
+    .stat-badge {
+      background: rgba(255,255,255,0.06); padding: 6px 14px;
+      border-radius: 20px; border: 1px solid var(--neon-blue);
+      box-shadow: 0 0 10px rgba(76, 201, 240, 0.3);
+    }
+
+    .map-container {
+      background: linear-gradient(180deg, rgba(3,5,12,0.98) 0%, rgba(20,12,45,0.95) 100%);
+      padding: 15px 12px 10px 12px; border-bottom: 2px solid #3a0ca3; position: relative;
+    }
+
+    .map-title {
+      text-align: center; font-size: 0.85rem; color: var(--neon-blue);
+      text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; font-weight: 800;
+    }
+
+    .map-track { display: flex; justify-content: space-between; align-items: center; position: relative; padding: 10px 2px; }
+    .map-line { position: absolute; top: 50%; left: 15px; right: 15px; height: 8px; background: #1a1638; z-index: 1; transform: translateY(-50%); border-radius: 4px; }
+    .map-line-progress { position: absolute; top: 50%; left: 15px; height: 8px; background: linear-gradient(90deg, var(--accent-purple), var(--neon-pink), var(--neon-blue)); z-index: 2; transform: translateY(-50%); border-radius: 4px; width: 0%; transition: width 0.5s ease; }
+
+    .station-node {
+      width: 22px; height: 22px; border-radius: 50%; background: #0f172a; border: 2px solid #475569;
+      z-index: 3; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: bold;
+    }
+    .station-node.completed { background: var(--neon-green); border-color: #a7f3d0; color: #000; }
+    .station-node.active { background: var(--neon-gold); border-color: #fff; color: #000; transform: scale(1.35); }
+
+    .player-avatar {
+      position: absolute; top: 50%; left: 15px; transform: translate(-50%, -85%);
+      font-size: 1.8rem; z-index: 4; transition: left 0.5s ease;
+    }
+
+    .stage-screen { padding: 12px 18px; background: rgba(12, 18, 38, 0.8); border-bottom: 2px solid #3a0ca3; }
+    .stage-badge { background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan)); border: 1px solid var(--neon-blue); padding: 5px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+
+    .game-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; min-height: 280px; }
+    .story-box { background: rgba(15, 23, 42, 0.95); border-left: 5px solid var(--neon-pink); padding: 14px; border-radius: 12px; font-size: 0.98rem; }
+
+    .interactive-area {
+      background: rgba(6, 10, 20, 0.9); border: 2px dashed #3a0ca3; border-radius: 16px;
+      padding: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 210px;
+    }
+
+    /* NUEVAS CLASES PARA DIVERSIFICACIÓN DE MINIJUEGOS */
+    /* Cartas de Memoria */
+    .memory-grid { display: flex; gap: 10px; justify-content: center; }
+    .memory-card {
+      width: 70px; height: 90px; background: #1e1b4b; border: 2px solid var(--neon-blue);
+      border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; cursor: pointer; transition: transform 0.3s;
+    }
+    .memory-card.flipped { background: var(--accent-purple); transform: rotateY(180deg); }
+
+    /* Slider de Temperatura */
+    .slider-box { width: 80%; text-align: center; display: flex; flex-direction: column; gap: 10px; }
+    .slider-box input { width: 100%; cursor: pointer; }
+
+    /* Bloques de Letras Ordenables */
+    .letter-blocks { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .letter-btn { background: #3a0ca3; border: 2px solid var(--neon-pink); color: white; font-size: 1.2rem; padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+
+    /* Orbe Mágico */
+    .crystal-orb {
+      width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, var(--neon-blue), var(--accent-cyan));
+      box-shadow: 0 0 30px var(--neon-blue); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 3rem;
+      animation: pulseOrb 2s infinite alternate;
+    }
+    @keyframes pulseOrb { 0% { transform: scale(0.95); } 100% { transform: scale(1.05); } }
+
+    .btn-choice {
+      background: #131b33; border: 2px solid #3a0ca3; color: white; padding: 12px;
+      border-radius: 10px; width: 100%; text-align: left; font-weight: 600; cursor: pointer;
+    }
+    .btn-choice.selected { border-color: var(--neon-gold); background: #4c1d95; }
+
+    .target-container { position: relative; width: 100%; height: 180px; background: #04060e; border-radius: 12px; overflow: hidden; }
+    .target-item { position: absolute; font-size: 2.5rem; cursor: pointer; animation: floatTarget 2s infinite alternate ease-in-out; }
+    @keyframes floatTarget { from { transform: translateY(0px); } to { transform: translateY(110px); } }
+
+    .circuit-grid { display: flex; gap: 15px; }
+    .circuit-node { width: 65px; height: 65px; border-radius: 50%; background: #1a233a; border: 3px solid #334155; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; cursor: pointer; }
+    .circuit-node.on { border-color: var(--neon-gold); background: #4a2e80; box-shadow: 0 0 20px var(--neon-gold); }
+
+    .btn-action {
+      background: linear-gradient(135deg, var(--neon-pink), var(--accent-purple)); color: white; border: none;
+      padding: 12px 28px; border-radius: 12px; font-weight: 800; cursor: pointer;
+    }
+
+    .win-screen { text-align: center; padding: 40px 20px; display: none; flex-direction: column; align-items: center; gap: 20px; }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <div class="spooky-world">
+    <div class="entity goblin">🧌</div>
+    <div class="entity skeleton">💀</div>
+    <div class="entity ghost">👻</div>
+    <div class="entity cauldron">🧪</div>
+    <div class="entity eyes">👀</div>
+    <div class="entity eyes2">👀</div>
+  </div>
+
+  <canvas id="magicCanvas"></canvas>
+
+  <div class="game-window">
+    <div class="stats-bar">
+      <div class="stat-badge">❤️ Vidas: <span id="hpText">3</span></div>
+      <div class="stat-badge">💎 Gemas: <span id="gemsText">0</span></div>
+      <div class="stat-badge">⭐ Nivel: <span id="lvlText">1/15</span></div>
+    </div>
+
+    <div class="map-container">
+      <div class="map-title">🧙‍♂️ Sendero Místico de las 15 Pruebas Científicas</div>
+      <div class="map-track" id="mapTrack">
+        <div class="map-line"></div>
+        <div class="map-line-progress" id="lineProgress"></div>
+        <div class="player-avatar" id="playerAvatar">🧙‍♂️</div>
+      </div>
+    </div>
+
+    <div id="gamePlayArea">
+      <div class="stage-screen">
+        <div class="stage-badge" id="stageBadge">Estación 1</div>
+      </div>
+
+      <div class="game-body">
+        <div class="story-box" id="storyBox">...</div>
+        <div class="interactive-area" id="interactiveArea"></div>
+      </div>
+
+      <div class="stats-bar" style="border-top: 2px solid #3a0ca3; border-bottom:none;">
+        <div id="feedbackText" style="font-weight:bold;"></div>
+        <button class="btn-action" onclick="checkCurrentStage()">¡Lanzar Conjuro! ➔</button>
+      </div>
+    </div>
+
+    <div class="win-screen" id="winScreen">
+      <div style="font-size: 5rem;">🔮👑🔬</div>
+      <h1 style="color: var(--neon-gold); font-size: 2.2rem;">¡MAESTRO SUPREMO DE LAS CIENCIAS!</h1>
+      <p style="color: #cbd5e1; max-width: 500px;">
+        ¡Has dominado las 15 pruebas únicas del Reino Místico resolviendo acertijos y magia!
+      </p>
+      <button class="btn-action" onclick="restartGame()">Volver a Jugar</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('magicCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [], mouseTrail = [];
+
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener('mousemove', (e) => {
+      for (let i = 0; i < 2; i++) {
+        mouseTrail.push({
+          x: e.clientX, y: e.clientY, size: Math.random() * 4 + 2,
+          speedX: (Math.random() - 0.5) * 2, speedY: (Math.random() - 0.5) * 2,
+          color: `hsl(${Math.random() * 60 + 280}, 100%, 75%)`, life: 1
+        });
+      }
+    });
+
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 3 + 1; this.speedX = Math.random() * 1 - 0.5; this.speedY = Math.random() * -1 - 0.2;
+        this.color = `hsl(${Math.random() * 70 + 250}, 100%, 75%)`;
+      }
+      update() { this.x += this.speedX; this.y += this.speedY; if (this.y < 0) this.y = canvas.height; }
+      draw() { ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); }
+    }
+    for (let i = 0; i < 40; i++) particles.push(new Particle());
+
+    function animateParticles() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => { p.update(); p.draw(); });
+      mouseTrail.forEach((p, idx) => {
+        p.x += p.speedX; p.y += p.speedY; p.life -= 0.03;
+        if (p.life <= 0) mouseTrail.splice(idx, 1);
+        else { ctx.fillStyle = p.color; ctx.globalAlpha = p.life; ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1; }
+      });
+      requestAnimationFrame(animateParticles);
+    }
+    animateParticles();
+
+    const audio = {
+      ctx: null,
+      init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); },
+      play(freq, type='sine', duration=0.15) {
+        try {
+          this.init(); const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+          osc.type = type; osc.frequency.value = freq; osc.connect(gain); gain.connect(this.ctx.destination);
+          osc.start(); gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+          osc.stop(this.ctx.currentTime + duration);
+        } catch(e){}
+      },
+      win() { this.play(523.25); setTimeout(()=>this.play(659.25), 100); setTimeout(()=>this.play(783.99), 200); },
+      fail() { this.play(180, 'sawtooth', 0.3); },
+      click() { this.play(440, 'sine', 0.05); }
+    };
+
+    // --- 15 NIVELES CON MECÁNICAS DIVERSIFICADAS ---
+    const levels = [
+      {
+        badge: "Nivel 1: Caza de Oxígeno",
+        story: "🍃 Atrapa las 3 hojas mágicas en vuelo para recolectar el producto de la fotosíntesis.",
+        type: "target_shoot", required: 3, icon: "🍃"
+      },
+      {
+        badge: "Nivel 2: Cartas de la Cadena Alimenticia",
+        story: "🎴 Encuentra las 2 cartas del 'Productor Primario' (🌱) para activar el ecosistema.",
+        type: "memory_cards", targetIcon: "🌱"
+      },
+      {
+        badge: "Nivel 3: Congelación con Termostato",
+        story: "🧊 Ajusta el regulador exactamente a 0°C para congelar la materia líquida en sólido.",
+        type: "slider_temp", targetTemp: 0
+      },
+      {
+        badge: "Nivel 4: Orbe Anatómico de Cristal",
+        story: "🔮 Presiona el Orbe Mágico 5 veces para revelar la respuesta del Esqueleto.",
+        type: "crystal_orb", targetClicks: 5
+      },
+      {
+        badge: "Nivel 5: Esqueleto del Laboratorio",
+        story: "💀 ¿Qué huesos de la lista protegen los órganos vitales del tórax?",
+        type: "multi_choice", options: ["Costillas", "Fémur", "Esternón", "Cráneo"], correct: [0, 2]
+      },
+      {
+        badge: "Nivel 6: Circuito Eléctrico",
+        story: "⚡ Conecta los 3 interruptores para encender el rayo de luz.",
+        type: "circuit", count: 3
+      },
+      {
+        badge: "Nivel 7: Enigma de Gravedad",
+        story: "🍎 ¿Qué fuerza invisible atrae a los objetos hacia el suelo en la Tierra?",
+        type: "choice", options: ["Magnetismo", "Gravedad", "Fuerza Eólica"], correct: 1
+      },
+      {
+        badge: "Nivel 8: Mezcla de Pociones",
+        story: "🧪 Junta la Solución Acuosa y la Sal para lograr una mezcla uniforme.",
+        type: "multi_choice", options: ["💧 Agua Pura", "🪨 Piedras", "🧂 Sal Mágica", "🍃 Hojas"], correct: [0, 2]
+      },
+      {
+        badge: "Nivel 9: Transformación Gaseosa",
+        story: "☁️ ¿En qué estado se encuentra el vapor que sube del caldero?",
+        type: "choice", options: ["Sólido", "Líquido", "Gaseoso"], correct: 2
+      },
+      {
+        badge: "Nivel 10: Captura de Luz Lunar",
+        story: "🌙 Atrapa los 3 destellos reflejados por la Luna Llena.",
+        type: "target_shoot", required: 3, icon: "✨"
+      },
+      {
+        badge: "Nivel 11: Bloques de Reciclaje",
+        story: "🧩 Haz clic en las letras en orden para construir la palabra de las 3 'R': R-E-C-I-C-L-A-R",
+        type: "letter_puzzle", word: "RECICLAR"
+      },
+      {
+        badge: "Nivel 12: Escudo de Ozono",
+        story: "🛡️ Selecciona las 2 acciones que reducen la contaminación atmosférica.",
+        type: "multi_choice", options: ["🚲 Usar Bicicleta", "🔥 Quemar Plásticos", "🌳 Sembrar Árboles", "🚗 Humo de Auto"], correct: [0, 2]
+      },
+      {
+        badge: "Nivel 13: Impulso Sanguíneo",
+        story: "❤️ Enciende los 2 canales para reactivar el pulso cardíaco.",
+        type: "circuit", count: 2
+      },
+      {
+        badge: "Nivel 14: Los Sentidos",
+        story: "👁️ ¿Qué sentido humano percibe las ondas de luz?",
+        type: "choice", options: ["El Oído", "La Vista", "El Tacto"], correct: 1
+      },
+      {
+        badge: "Nivel 15: La Gran Palabra Científica",
+        story: "🧩 Ordena los bloques de letras para descifrar la palabra: C-I-E-N-C-I-A",
+        type: "letter_puzzle", word: "CIENCIA"
+      }
+    ];
+
+    let currentLvl = 0, hp = 3, gems = 0, gameState = {};
+
+    function initMap() {
+      const track = document.getElementById('mapTrack');
+      track.querySelectorAll('.station-node').forEach(n => n.remove());
+      levels.forEach((_, idx) => {
+        const node = document.createElement('div');
+        node.className = `station-node ${idx === 0 ? 'active' : ''}`;
+        node.id = `node-${idx}`; node.textContent = idx + 1;
+        track.appendChild(node);
+      });
+      updateStatsUI();
+    }
+
+    function updateStatsUI() {
+      document.getElementById('hpText').textContent = hp;
+      document.getElementById('gemsText').textContent = gems;
+      document.getElementById('lvlText').textContent = `${currentLvl + 1}/${levels.length}`;
+      const progress = (currentLvl / (levels.length - 1)) * 100;
+      document.getElementById('lineProgress').style.width = `${progress}%`;
+      const trackWidth = document.getElementById('mapTrack').offsetWidth - 30;
+      document.getElementById('playerAvatar').style.left = `${15 + (trackWidth * (currentLvl / (levels.length - 1)))}px`;
+
+      levels.forEach((_, idx) => {
+        const node = document.getElementById(`node-${idx}`);
+        if (node) {
+          node.className = 'station-node';
+          if (idx < currentLvl) node.classList.add('completed');
+          if (idx === currentLvl) node.classList.add('active');
+        }
+      });
+    }
+
+    function renderMinigame() {
+      const lvl = levels[currentLvl];
+      document.getElementById('stageBadge').textContent = lvl.badge;
+      document.getElementById('storyBox').textContent = lvl.story;
+      document.getElementById('feedbackText').textContent = '';
+
+      const area = document.getElementById('interactiveArea');
+      area.innerHTML = '';
+      gameState = {};
+
+      if (lvl.type === 'target_shoot') {
+        gameState.hits = 0;
+        area.innerHTML = `<div class="target-container" id="targetArea"></div>`;
+        const container = document.getElementById('targetArea');
+        for (let i = 0; i < lvl.required; i++) {
+          const target = document.createElement('div');
+          target.className = 'target-item';
+          target.textContent = lvl.icon || '🎯';
+          target.style.left = `${15 + i * 28}%`;
+          target.style.animationDuration = `${1.8 + Math.random()}s`;
+          target.onclick = () => {
+            audio.click(); target.style.display = 'none'; gameState.hits++;
+            document.getElementById('feedbackText').textContent = `🎯 Capturados: ${gameState.hits}/${lvl.required}`;
+          };
+          container.appendChild(target);
+        }
+
+      } else if (lvl.type === 'memory_cards') {
+        gameState.foundPairs = 0;
+        area.innerHTML = `<div class="memory-grid" id="memGrid"></div>`;
+        const grid = document.getElementById('memGrid');
+        const cards = ["🌱", "🪨", "🌱", "🔥"];
+        cards.sort(() => Math.random() - 0.5);
+        cards.forEach((symbol) => {
+          const card = document.createElement('div');
+          card.className = 'memory-card'; card.textContent = '❓';
+          card.onclick = () => {
+            audio.click();
+            card.textContent = symbol;
+            card.classList.add('flipped');
+            if (symbol === lvl.targetIcon) gameState.foundPairs++;
+          };
+          grid.appendChild(card);
+        });
+
+      } else if (lvl.type === 'slider_temp') {
+        gameState.currentVal = 50;
+        area.innerHTML = `
+          <div class="slider-box">
+            <span style="font-size:1.5rem; font-weight:bold;"><span id="tempVal">50</span>°C</span>
+            <input type="range" min="-20" max="100" value="50" oninput="document.getElementById('tempVal').textContent = this.value; gameState.currentVal = parseInt(this.value)">
+          </div>
+        `;
+
+      } else if (lvl.type === 'crystal_orb') {
+        gameState.clicks = 0;
+        area.innerHTML = `<div class="crystal-orb" id="orb">🔮</div><p>¡Haz clic en el orbe para acumular energía!</p>`;
+        document.getElementById('orb').onclick = () => {
+          audio.click(); gameState.clicks++;
+          document.getElementById('feedbackText').textContent = `⚡ Energía: ${gameState.clicks}/${lvl.targetClicks}`;
+        };
+
+      } else if (lvl.type === 'circuit') {
+        gameState.nodes = new Array(lvl.count).fill(false);
+        area.innerHTML = `<div class="circuit-grid" id="circuitGrid"></div>`;
+        const grid = document.getElementById('circuitGrid');
+        for (let i = 0; i < lvl.count; i++) {
+          const node = document.createElement('div');
+          node.className = 'circuit-node'; node.textContent = '⚡';
+          node.onclick = () => {
+            audio.click(); gameState.nodes[i] = !gameState.nodes[i];
+            node.className = 'circuit-node' + (gameState.nodes[i] ? ' on' : '');
+          };
+          grid.appendChild(node);
+        }
+
+      } else if (lvl.type === 'choice') {
+        gameState.selected = null;
+        lvl.options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn-choice'; btn.textContent = opt;
+          btn.onclick = () => {
+            audio.click();
+            document.querySelectorAll('.btn-choice').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected'); gameState.selected = idx;
+          };
+          area.appendChild(btn);
+        });
+
+      } else if (lvl.type === 'letter_puzzle') {
+        gameState.currentWord = "";
+        area.innerHTML = `<div class="letter-blocks" id="letterBlocks"></div><h3 style="margin-top:10px;" id="puzzleDisplay">___</h3>`;
+        const shuffled = lvl.word.split('').sort(() => Math.random() - 0.5);
+        shuffled.forEach((char) => {
+          const btn = document.createElement('button');
+          btn.className = 'letter-btn'; btn.textContent = char;
+          btn.onclick = () => {
+            audio.click();
+            gameState.currentWord += char;
+            document.getElementById('puzzleDisplay').textContent = gameState.currentWord;
+          };
+          document.getElementById('letterBlocks').appendChild(btn);
+        });
+
+      } else if (lvl.type === 'multi_choice') {
+        gameState.selected = [];
+        lvl.options.forEach((opt, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'btn-choice'; btn.textContent = `[ ] ${opt}`;
+          btn.onclick = () => {
+            audio.click();
+            if (gameState.selected.includes(idx)) {
+              gameState.selected = gameState.selected.filter(x => x !== idx);
+              btn.classList.remove('selected'); btn.textContent = `[ ] ${opt}`;
+            } else {
+              gameState.selected.push(idx);
+              btn.classList.add('selected'); btn.textContent = `[✓] ${opt}`;
+            }
+          };
+          area.appendChild(btn);
+        });
+      }
+
+      updateStatsUI();
+    }
+
+    function checkCurrentStage() {
+      const lvl = levels[currentLvl];
+      let win = false;
+
+      if (lvl.type === 'target_shoot') win = gameState.hits >= lvl.required;
+      else if (lvl.type === 'memory_cards') win = gameState.foundPairs >= 2;
+      else if (lvl.type === 'slider_temp') win = gameState.currentVal === lvl.targetTemp;
+      else if (lvl.type === 'crystal_orb') win = gameState.clicks >= lvl.targetClicks;
+      else if (lvl.type === 'circuit') win = gameState.nodes.every(n => n === true);
+      else if (lvl.type === 'choice') win = gameState.selected === lvl.correct;
+      else if (lvl.type === 'letter_puzzle') win = gameState.currentWord === lvl.word;
+      else if (lvl.type === 'multi_choice') win = JSON.stringify(gameState.selected.sort()) === JSON.stringify(lvl.correct.sort());
+
+      const feedback = document.getElementById('feedbackText');
+      if (win) {
+        audio.win(); gems += 10;
+        feedback.style.color = "var(--neon-green)";
+        feedback.textContent = "✨ ¡Conjuro Exitoso! +10 Gemas";
+        setTimeout(() => {
+          currentLvl++;
+          if (currentLvl < levels.length) renderMinigame();
+          else showWinScreen();
+        }, 1000);
+      } else {
+        audio.fail(); hp--; updateStatsUI();
+        feedback.style.color = "var(--error)";
+        feedback.textContent = "❌ ¡Combinación o ajuste incorrecto! -1 Vida.";
+        if (hp <= 0) {
+          alert("¡Se ha agotado tu energía mágica! Reiniciando travesía...");
+          restartGame();
+        }
+      }
+    }
+
+    function showWinScreen() {
+      document.getElementById('gamePlayArea').style.display = 'none';
+      document.getElementById('winScreen').style.display = 'flex';
+    }
+
+    function restartGame() {
+      currentLvl = 0; hp = 3; gems = 0;
+      document.getElementById('gamePlayArea').style.display = 'block';
+      document.getElementById('winScreen').style.display = 'none';
+      initMap(); renderMinigame();
+    }
+
+    window.onload = () => { initMap(); renderMinigame(); };
+  </script>
+</body>
+</html>
